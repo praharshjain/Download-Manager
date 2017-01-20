@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+
 // This class downloads a file from a URL.
 class Download extends Observable implements Runnable {
      
@@ -22,14 +23,15 @@ class Download extends Observable implements Runnable {
     private int size; // size of download in bytes
     private int downloaded; // number of bytes downloaded
     private int status; // current status of download
-     
+    private long startTime; // start time for current bytes
+    private long readSinceStart; // number of bytes downloaded since startTime
+    private float speed=0; //download speed in KB/s
     // Constructor for Download.
     public Download(URL url) {
         this.url = url;
         size = -1;
         downloaded = 0;
         status = DOWNLOADING;
-         
         // Begin the download.
         download();
     }
@@ -42,6 +44,10 @@ class Download extends Observable implements Runnable {
     // Get this download's size.
     public int getSize() {
         return size;
+    }
+    // Get download speed.
+    public float getSpeed() {
+        return speed;
     }
      
     // Get this download's progress.
@@ -125,7 +131,8 @@ class Download extends Observable implements Runnable {
                 size = contentLength;
                 stateChanged();
             }
-             
+            // used to update speed at regular intervals
+            int i=0;
             // Open file and seek to the end of it.
             file = new RandomAccessFile(getFileName(url), "rw");
             file.seek(downloaded);
@@ -134,21 +141,30 @@ class Download extends Observable implements Runnable {
             while (status == DOWNLOADING) {
         /* Size buffer according to how much of the
            file is left to download. */
+                if(i==0)
+                {   startTime = System.nanoTime();
+                    readSinceStart=0;
+                }
                 byte buffer[];
                 if (size - downloaded > MAX_BUFFER_SIZE) {
                     buffer = new byte[MAX_BUFFER_SIZE];
                 } else {
                     buffer = new byte[size - downloaded];
                 }
-                 
                 // Read from server into buffer.
                 int read = stream.read(buffer);
                 if (read == -1)
                     break;
-                 
                 // Write buffer to file.
                 file.write(buffer, 0, read);
                 downloaded += read;
+                readSinceStart+=read;
+                //update speed
+                i++;
+                if(i>=100)
+                {   speed=(readSinceStart*976562.5f)/(System.nanoTime()-startTime);
+                    i=0;
+                }
                 stateChanged();
             }
              
@@ -159,6 +175,7 @@ class Download extends Observable implements Runnable {
                 stateChanged();
             }
         } catch (Exception e) {
+            System.out.println(e);
             error();
         } finally {
             // Close file.
