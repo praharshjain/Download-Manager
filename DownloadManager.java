@@ -275,6 +275,8 @@ public class DownloadManager extends JFrame
     // Run the Download Manager.
     public static void main(String[] args) {
         DownloadManager manager = new DownloadManager();
+        ImageIcon img = new ImageIcon("icon.png");
+        manager.setIconImage(img.getImage());
         manager.show();
     }
 }
