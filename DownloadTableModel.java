@@ -7,15 +7,15 @@ class DownloadsTableModel extends AbstractTableModel
         implements Observer {
      
     // These are the names for the table's columns.
-    private static final String[] columnNames = {"URL", "Size in MB", "Speed in KB/s",
-    "Progress", "Status"};
+    private static final String[] columnNames = {"URL", "Size in MB", "Progress", "Speed in KB/s", 
+    "Avg Speed in KB/s", "Elapsed Time", "Remaing Time" ,"Status"};
      
     // These are the classes for each column's values.
     private static final Class[] columnClasses = {String.class, String.class,
-    String.class, JProgressBar.class, String.class};
+    JProgressBar.class, String.class, String.class, String.class, String.class, String.class};
      
     // The table's list of downloads.
-    private ArrayList downloadList = new ArrayList();
+    private ArrayList<Download> downloadList = new ArrayList<Download>();
      
     // Add a new download to the table.
     public void addDownload(Download download) {
@@ -31,7 +31,7 @@ class DownloadsTableModel extends AbstractTableModel
      
     // Get a download for the specified row.
     public Download getDownload(int row) {
-        return (Download) downloadList.get(row);
+        return downloadList.get(row);
     }
      
     // Remove a download from the list.
@@ -65,18 +65,24 @@ class DownloadsTableModel extends AbstractTableModel
     // Get value for a specific row and column combination.
     public Object getValueAt(int row, int col) {
          
-        Download download = (Download) downloadList.get(row);
+        Download download = downloadList.get(row);
         switch (col) {
             case 0: // URL
                 return download.getUrl();
             case 1: // Size
-                int size = download.getSize();
+                long size = download.getSize();
                 return (size == -1) ? "" : Float.toString((float)size/1048576);
-            case 2: //Speed
-                return download.getSpeed();
-            case 3: // Progress
+            case 2: // Progress
                 return new Float(download.getProgress());
-            case 4: // Status
+            case 3: //Speed
+                return download.getSpeed();
+            case 4: //Avg Speed
+                return download.getAvgSpeed();
+            case 5: //Elapsed Time
+                return download.getElapsedTime();
+            case 6: //Remaining Time
+                return download.getRemainingTime();
+            case 7: // Status
                 return Download.STATUSES[download.getStatus()];
         }
         return "";

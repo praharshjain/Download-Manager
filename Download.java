@@ -20,11 +20,16 @@ class Download extends Observable implements Runnable {
     public static final int ERROR = 4;
      
     private URL url; // download URL
-    private int size; // size of download in bytes
-    private int downloaded; // number of bytes downloaded
+    private long size; // size of download in bytes
+    private long downloaded; // number of bytes downloaded
     private int status; // current status of download
+    private long initTime; //inital time when download started or resumed
     private long startTime; // start time for current bytes
     private long readSinceStart; // number of bytes downloaded since startTime
+    private long elapsedTime=0; // elapsed time till now
+    private long prevElapsedTime=0; // time elapsed before resuming download
+    private long remainingTime=-1; //time remaining to finish download
+    private float avgSpeed=0; //average download speed in KB/s
     private float speed=0; //download speed in KB/s
     // Constructor for Download.
     public Download(URL url) {
@@ -42,14 +47,42 @@ class Download extends Observable implements Runnable {
     }
      
     // Get this download's size.
-    public int getSize() {
+    public long getSize() {
         return size;
     }
     // Get download speed.
     public float getSpeed() {
         return speed;
     }
-     
+    // Get average speed
+    public float getAvgSpeed() {
+        return avgSpeed;
+    }
+    // Get elapsed time
+    public String getElapsedTime() {
+        return formatTime(elapsedTime/1000000000);
+    }
+    // Get remaining time
+    public String getRemainingTime() {
+        if(remainingTime==-1)   return "Unknown";
+        else    return formatTime(remainingTime);
+    }
+    // Format time
+    public String formatTime(long time) { //time in seconds
+        String s="";
+        if(time>=3600) {
+            s+=(time/3600)+" hours";
+            time%=3600;
+        }
+        if(time>=60) {
+            s+=" "+(time/60)+" minutes";
+            time%=60;
+        }
+        if(time>0) {
+            s+=" "+time+" seconds";
+        }
+        return s;
+    }
     // Get this download's progress.
     public float getProgress() {
         return ((float) downloaded / size) * 100;
@@ -62,6 +95,7 @@ class Download extends Observable implements Runnable {
      
     // Pause this download.
     public void pause() {
+        prevElapsedTime=elapsedTime;
         status = PAUSED;
         stateChanged();
     }
@@ -75,12 +109,14 @@ class Download extends Observable implements Runnable {
      
     // Cancel this download.
     public void cancel() {
+        prevElapsedTime=elapsedTime;
         status = CANCELLED;
         stateChanged();
     }
      
     // Mark this download as having an error.
     private void error() {
+        prevElapsedTime=elapsedTime;
         status = ERROR;
         stateChanged();
     }
@@ -138,18 +174,19 @@ class Download extends Observable implements Runnable {
             file.seek(downloaded);
              
             stream = connection.getInputStream();
+            initTime = System.nanoTime();
             while (status == DOWNLOADING) {
         /* Size buffer according to how much of the
            file is left to download. */
                 if(i==0)
                 {   startTime = System.nanoTime();
-                    readSinceStart=0;
+                    readSinceStart = 0;
                 }
                 byte buffer[];
                 if (size - downloaded > MAX_BUFFER_SIZE) {
                     buffer = new byte[MAX_BUFFER_SIZE];
                 } else {
-                    buffer = new byte[size - downloaded];
+                    buffer = new byte[(int)(size - downloaded)];
                 }
                 // Read from server into buffer.
                 int read = stream.read(buffer);
@@ -161,8 +198,12 @@ class Download extends Observable implements Runnable {
                 readSinceStart+=read;
                 //update speed
                 i++;
-                if(i>=100)
+                if(i>=50)
                 {   speed=(readSinceStart*976562.5f)/(System.nanoTime()-startTime);
+                    if(speed>0) remainingTime=(long)((size-downloaded)/(speed*1024));
+                    else remainingTime=-1;
+                    elapsedTime=prevElapsedTime+(System.nanoTime()-initTime);
+                    avgSpeed=(downloaded*976562.5f)/elapsedTime;
                     i=0;
                 }
                 stateChanged();
