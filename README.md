@@ -17,7 +17,11 @@ $ javac DownloadManager.java
 And finally to run - 
 ```
 $ java DownloadManager
-```
+```  
+Screenshot
+----------------  
+<img src="https://github.com/praharshjain/Download-Manager/blob/master/screenshot.png" width="1200">
+  
 License
 ----------------
 MIT
