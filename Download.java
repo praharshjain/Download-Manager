@@ -64,23 +64,17 @@ class Download extends Observable implements Runnable {
     }
     // Get remaining time
     public String getRemainingTime() {
-        if(remainingTime==-1)   return "Unknown";
+        if(remainingTime<0)   return "Unknown";
         else    return formatTime(remainingTime);
     }
     // Format time
     public String formatTime(long time) { //time in seconds
         String s="";
-        if(time>=3600) {
-            s+=(time/3600)+" hours";
-            time%=3600;
-        }
-        if(time>=60) {
-            s+=" "+(time/60)+" minutes";
-            time%=60;
-        }
-        if(time>0) {
-            s+=" "+time+" seconds";
-        }
+        s+=(String.format("%02d", time/3600))+":";
+        time%=3600;
+        s+=(String.format("%02d", time/60))+":";
+        time%=60;
+        s+=String.format("%02d", time);
         return s;
     }
     // Get this download's progress.
