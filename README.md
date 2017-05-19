@@ -7,6 +7,11 @@ The user interface is created using Swing controls.
 
 Usage
 ----------------
+
+Download executable jar from [Releases](https://github.com/praharshjain/Download-Manager/releases)
+
+Or build from source :  
+
 To compile - 
 ```
 $ javac ProgressRenderer.java  
